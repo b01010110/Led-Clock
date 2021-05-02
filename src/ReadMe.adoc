@@ -1,0 +1,7 @@
+:Author: b01010110
+:Email: {AuthorEmail}
+:Date: 16/03/2021
+:Revision: version#
+:License: Public Domain
+
+= Project: {Project}

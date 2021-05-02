@@ -1,0 +1,1 @@
+#include "clock.h"Clock clock(6, 7, 9, 11, 10, 8, 4, 5, 1, 0, 2, 3, 13, 12);void setup() {  clock.init();}void loop() {  clock.tick();}
