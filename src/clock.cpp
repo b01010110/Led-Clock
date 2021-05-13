@@ -19,6 +19,19 @@ Clock::Clock(byte a, byte b, byte c, byte d, byte e, byte f, byte g, byte h, byt
   _btn1 = btn1;
   _btn2 = btn2;
 
+  segments[0] = _a;
+  segments[1] = _b;
+  segments[2] = _c;
+  segments[3] = _d;
+  segments[4] = _e;
+  segments[5] = _f;
+  segments[6] = _g;
+
+  ranks[0] = _d1;
+  ranks[1] = _d2;
+  ranks[2] = _d3;
+  ranks[3] = _d4;
+
   pinMode(_a, OUTPUT);
   pinMode(_b, OUTPUT);
   pinMode(_c, OUTPUT);
@@ -34,158 +47,58 @@ Clock::Clock(byte a, byte b, byte c, byte d, byte e, byte f, byte g, byte h, byt
 }
 
 /**
- * Display a digit on the screen.
+ * Display the data on the screen.
  */
-void Clock::setDigit(byte digit, char symbol) {
-  switch (symbol) {
-    case '0':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, HIGH);
-      digitalWrite(_e, HIGH);
-      digitalWrite(_f, HIGH);
-      digitalWrite(_g, LOW);
-      break;
-    case '1':
-      digitalWrite(_a, LOW);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, LOW);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, LOW);
-      digitalWrite(_g, LOW);
-      break;
-    case '2':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, LOW);
-      digitalWrite(_d, HIGH);
-      digitalWrite(_e, HIGH);
-      digitalWrite(_f, LOW);
-      digitalWrite(_g, HIGH);
-      break;
-    case '3':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, HIGH);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, LOW);
-      digitalWrite(_g, HIGH);
-      break;
-    case '4':
-      digitalWrite(_a, LOW);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, LOW);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, HIGH);
-      digitalWrite(_g, HIGH);
-      break;
-    case '5':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, LOW);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, HIGH);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, HIGH);
-      digitalWrite(_g, HIGH);
-      break;
-    case '6':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, LOW);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, HIGH);
-      digitalWrite(_e, HIGH);
-      digitalWrite(_f, HIGH);
-      digitalWrite(_g, HIGH);
-      break;
-    case '7':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, LOW);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, LOW);
-      digitalWrite(_g, LOW);
-      break;
-    case '8':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, HIGH);
-      digitalWrite(_e, HIGH);
-      digitalWrite(_f, HIGH);
-      digitalWrite(_g, HIGH);
-      break;
-    case '9':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, HIGH);
-      digitalWrite(_d, HIGH);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, HIGH);
-      digitalWrite(_g, HIGH);
-      break;
-    case ' ':
-      digitalWrite(_a, LOW);
-      digitalWrite(_b, LOW);
-      digitalWrite(_c, LOW);
-      digitalWrite(_d, LOW);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, LOW);
-      digitalWrite(_g, LOW);
-      break;
-    case '*':
-      digitalWrite(_a, HIGH);
-      digitalWrite(_b, HIGH);
-      digitalWrite(_c, LOW);
-      digitalWrite(_d, LOW);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, HIGH);
-      digitalWrite(_g, HIGH);
-      break;
-    default:
-      digitalWrite(_a, LOW);
-      digitalWrite(_b, LOW);
-      digitalWrite(_c, LOW);
-      digitalWrite(_d, LOW);
-      digitalWrite(_e, LOW);
-      digitalWrite(_f, LOW);
-      digitalWrite(_g, HIGH);
+void Clock::displayData() {
+  byte rank = _currentDigit;
+  char symbol = displayedSymbols[rank];
+  
+  if (++_currentDigit > 3) _currentDigit = 0;
+
+  if (_mode == showSetup) {
+    if (isFirstDigits && !isChangeDigits && !isShowDigits && rank < 2) rank = 255;
+    if (!isFirstDigits && !isChangeDigits && !isShowDigits && rank > 1) rank = 255;
+  }
+
+  // neighbors light fix
+  for (byte i = 0; i < 7; i++) {
+    digitalWrite(segments[i], LOW);
   }
   
-  switch(digit) {
-    case 0:
-      digitalWrite(_d1, HIGH);
-      digitalWrite(_d2, LOW);
-      digitalWrite(_d3, LOW);
-      digitalWrite(_d4, LOW);
-      break;
-    case 1:
-      digitalWrite(_d1, LOW);
-      digitalWrite(_d2, HIGH);
-      digitalWrite(_d3, LOW);
-      digitalWrite(_d4, LOW);
-      break;
-    case 2:
-      digitalWrite(_d1, LOW);
-      digitalWrite(_d2, LOW);
-      digitalWrite(_d3, HIGH);
-      digitalWrite(_d4, LOW);
-      break;
-    case 3:
-      digitalWrite(_d1, LOW);
-      digitalWrite(_d2, LOW);
-      digitalWrite(_d3, LOW);
-      digitalWrite(_d4, HIGH);
-      break;
-    default:
-      digitalWrite(_d1, LOW);
-      digitalWrite(_d2, LOW);
-      digitalWrite(_d3, LOW);
-      digitalWrite(_d4, LOW);
+  byte rankPorts;
+
+  switch(rank) {
+    case 0: rankPorts = 0b00000001; break;
+    case 1: rankPorts = 0b00000010; break;
+    case 2: rankPorts = 0b00000100; break;
+    case 3: rankPorts = 0b00001000; break;
+    default: rankPorts = 0b00000000;
+  }
+
+  for (byte i = 0; i < 4; i++) {
+    digitalWrite(ranks[i], (rankPorts >> i) & 1);
+  }
+
+  byte symbolPorts;
+
+  switch (symbol) {
+    case '0': symbolPorts = 0b00111111; break;
+    case '1': symbolPorts = 0b00000110; break;
+    case '2': symbolPorts = 0b01011011; break;
+    case '3': symbolPorts = 0b01001111; break;
+    case '4': symbolPorts = 0b01100110; break;
+    case '5': symbolPorts = 0b01101101; break;
+    case '6': symbolPorts = 0b01111101; break;
+    case '7': symbolPorts = 0b00000111; break;
+    case '8': symbolPorts = 0b01111111; break;
+    case '9': symbolPorts = 0b01101111; break;
+    case ' ': symbolPorts = 0b00000000; break;
+    case '*': symbolPorts = 0b01100011; break;
+    default: symbolPorts = 0b01000000;
+  }
+
+  for (byte i = 0; i < 7; i++) {
+    digitalWrite(segments[i], (symbolPorts >> i) & 1);
   }
 }
 
@@ -218,15 +131,6 @@ void Clock::getCurrentTemperature() {
 }
 
 /**
- * Switch to next digit. For implementation of dynamic indication.
- */
-byte Clock::nextDigit() {
-  byte digit = _currentDigit;
-  if (++_currentDigit > 3) _currentDigit = 0;
-  return digit;
-}
-
-/**
  * The implementation to blink the separator.
  */
 void Clock::delimiter(boolean on = true) {
@@ -246,7 +150,8 @@ void Clock::delimiter(boolean on = true) {
  */
 void Clock::init() {
   rtc.begin();
-  
+
+  rtcTimer = GTimer(MS, 300);
   blinkTimer = GTimer(MS, 500);
   showTemperatureTimer = GTimer(MS, 30 * 1000);
   hideTemperatureTimer = GTimer();
@@ -281,74 +186,23 @@ void Clock::displayedTimeMinuteAdd() {
 }
 
 /**
- * The implementation of clock mode.
+ * Getting the time and temperature.
  */
-void Clock::watchAction() {
-  displayedSymbols = time;
-  byte digit = nextDigit();
-  setDigit(digit, displayedSymbols[digit]);
-  delimiter();
-}
+void Clock::getRTCData() {
+  if (!rtcTimer.isReady()) return;
 
-/**
- * The implementation of setup time mode.
- */
-void Clock::setupAction() {
-  // blink the digit before setup
-  if (blinkTimer.isReady()) isShowDigits = !isShowDigits;
-  
-  // setup time
-  if (btnAddition.isStep() || btnAddition.isClick()) {
-    isChangeDigits = true;
-    if (isFirstDigits) {
-      displayedTimeHourAdd();
-    } else {
-      displayedTimeMinuteAdd();
-    }
-  }
-  
-  // switch to setting next digit or save time in the RTC
-  if (btnMain.isClick()) {
-    if (isFirstDigits) {
-      isFirstDigits = false;
-      isChangeDigits = false;
-    } else {
-      isFirstDigits = true;
-      isChangeDigits = false;
-      rtc.adjust(DateTime(2021, 4, 27, (displayedSymbols[0] - '0') * 10 + (displayedSymbols[1] - '0'), (displayedSymbols[2] - '0') * 10 + (displayedSymbols[3] - '0'), 0));
-      _mode = showWatch;
-    }
-  }
-  
-  byte digit = nextDigit();
-  if (isFirstDigits && !isChangeDigits && !isShowDigits && digit < 2) digit = 255;
-  if (!isFirstDigits && !isChangeDigits && !isShowDigits && digit > 1) digit = 255;
-  setDigit(digit, displayedSymbols[digit > 3 ? 0 : digit]);
-  delimiter(false);
-}
-
-/**
- * The implementation of temperature mode.
- */
-void Clock::temperatureAction() {
-  displayedSymbols = temperature;
-  byte digit = nextDigit();
-  setDigit(digit, displayedSymbols[digit]);
-  delimiter(false);
+  getCurrentTime();
+  getCurrentTemperature();
 }
 
 /**
  * Main method of the program.
  */
 void Clock::tick() {
+  getRTCData();
+
   btnMain.tick();
   btnAddition.tick();
-  
-  // get time and temperature
-  if (_currentDigit == 0) {
-    getCurrentTime();
-    getCurrentTemperature();
-  }
   
   // switch to setup time mode
   if (btnMain.isHold()) {
@@ -364,13 +218,39 @@ void Clock::tick() {
   }
   
   if (_mode == showWatch) {
-    watchAction();
+    displayedSymbols = time;
+    delimiter();
   } else if (_mode == showSetup) {
-    setupAction();
+    // blink the digit before setup
+    if (blinkTimer.isReady()) isShowDigits = !isShowDigits;
+    
+    // setup time
+    if (btnAddition.isStep() || btnAddition.isClick()) {
+      isChangeDigits = true;
+      if (isFirstDigits) {
+        displayedTimeHourAdd();
+      } else {
+        displayedTimeMinuteAdd();
+      }
+    }
+    
+    // switch to setting next digit or save time in the RTC
+    if (btnMain.isClick()) {
+      if (isFirstDigits) {
+        isFirstDigits = false;
+        isChangeDigits = false;
+      } else {
+        isFirstDigits = true;
+        isChangeDigits = false;
+        rtc.adjust(DateTime(2021, 4, 27, (displayedSymbols[0] - '0') * 10 + (displayedSymbols[1] - '0'), (displayedSymbols[2] - '0') * 10 + (displayedSymbols[3] - '0'), 0));
+        _mode = showWatch;
+      }
+    }
+
+    delimiter(false);
   } else if (_mode == showTemperature) {
-    temperatureAction();
+    displayedSymbols = temperature;
+    delimiter(false);
     if (hideTemperatureTimer.isReady()) _mode = showWatch;
   }
-  
-  delay(4);
 }
